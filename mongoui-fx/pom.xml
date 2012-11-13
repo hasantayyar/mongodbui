@@ -12,8 +12,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<javafx.rt.jar>C:\Program Files (x86)\Oracle\JavaFX 2.2 SDK\rt\lib\jfxrt.jar</javafx.rt.jar>
-		<javafx.ant.jar>C:\Program Files (x86)\Oracle\JavaFX 2.2 SDK\lib\ant-javafx.jar</javafx.ant.jar>
+		<javafx.rt.jar>/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home/jre/lib/jfxrt.jar</javafx.rt.jar>
+		<javafx.ant.jar>/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home/lib/ant-javafx.jar</javafx.ant.jar>
 	</properties>
 
 	<build>
