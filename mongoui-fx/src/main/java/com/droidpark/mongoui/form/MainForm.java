@@ -1,6 +1,5 @@
 package com.droidpark.mongoui.form;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,14 +16,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.TreeItem;
@@ -34,23 +29,22 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
 import static com.droidpark.mongoui.util.LanguageConstants.*;
 
-import com.droidpark.mongoui.component.ModalDialog;
+import com.droidpark.mongoui.component.MongoUITab;
+import com.droidpark.mongoui.dialog.ConnectionDialog;
 import com.droidpark.mongoui.dialog.ManageCollectionDialog;
 import com.droidpark.mongoui.task.AddTabTask;
 import com.droidpark.mongoui.task.CreateJSEditorTab;
+import com.droidpark.mongoui.task.CreateJSRunnableTabTask;
 import com.droidpark.mongoui.task.CreateResultTabTask;
 import com.droidpark.mongoui.util.DBTreeEnum;
 import com.droidpark.mongoui.util.ImageUtil;
 import com.droidpark.mongoui.util.Language;
-import com.droidpark.mongoui.util.LanguageConstants;
 import com.droidpark.mongoui.util.Log4jTextAreaAppender;
 import com.droidpark.mongoui.util.MongoUtil;
 import com.droidpark.mongoui.util.Util;
@@ -58,7 +52,6 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
 
 public class MainForm extends Application {
 
@@ -112,6 +105,7 @@ public class MainForm extends Application {
 	 */
 	private void initStage() {
 		stage.setTitle("MongoUI FX");
+		stage.getIcons().add(ImageUtil.DATABASE_32_32);
 		pane = new AnchorPane();
 		scene = new Scene(pane, 850, 500);
 		scene.getStylesheets().addAll(getClass().getResource(Util.DEFAULT_STYLE + "style.css").toExternalForm());
@@ -231,6 +225,8 @@ public class MainForm extends Application {
 		tabPane.prefWidthProperty().bind(centerPane.widthProperty());
 		tabPane.prefHeightProperty().bind(centerPane.heightProperty());
 		centerPane.getChildren().add(tabPane);
+		MongoUITab welcomeTab = new MongoUITab();
+		tabPane.getTabs().add(welcomeTab);
 	}
 	
 	private void initToolBarButtons() {
@@ -259,6 +255,7 @@ public class MainForm extends Application {
 		//JavaScript
 		Button javaScriptButton = new Button(Language.get(MAIN_MENU_JAVASCRIPT), new ImageView(ImageUtil.JAVASCRIPT_24_24));
 		javaScriptButton.setContentDisplay(ContentDisplay.TOP);
+		javaScriptButton.setOnAction(new MainToolbarJavaScriptButton_OnClick());
 		toolBar.getItems().add(javaScriptButton);
 		
 		//Server Status
@@ -283,6 +280,20 @@ public class MainForm extends Application {
 		public void handle(ActionEvent arg0) {
 			ManageCollectionDialog dialog = new ManageCollectionDialog(instance);
 			dialog.showModalDialog();
+		}
+	}
+	
+	private class MainToolbarJavaScriptButton_OnClick implements EventHandler<ActionEvent> {
+		public void handle(ActionEvent arg0) {
+			CreateJSRunnableTabTask task = new CreateJSRunnableTabTask();
+			progressBar.progressProperty().bind(task.progressProperty());
+			Thread taskThread = new Thread(task);
+			taskThread.start();
+			
+			//Add Result tab to TabPane Task
+			AddTabTask addTabTask = new AddTabTask(task, tabPane);
+			Thread tabThread = new Thread(addTabTask);
+			tabThread.start();
 		}
 	}
 	
@@ -429,50 +440,7 @@ public class MainForm extends Application {
 	}
 
 	private void connectToDatabaseModalDialog() {
-		
-		final ModalDialog dialog = new ModalDialog("Connect to Database", 250, 150, ImageUtil.DATABASE_24_24);
-		GridPane grid = new GridPane();
-		
-		Label hostLabel = new Label("Host: ");
-		hostLabel.setStyle("-fx-padding: 0px 50px 0px 0px;");
-		final TextField hostField = new TextField("localhost");
-		grid.addRow(0, hostLabel, hostField);
-		grid.setStyle("-fx-padding: 10px;");
-		
-		Label portLabel = new Label("Port: ");
-		portLabel.setStyle("-fx-padding: 0px 50px 0px 0px;");
-		final TextField portField = new TextField("27017");
-		grid.addRow(1, portLabel, portField);
-		dialog.setContent(grid);
-		Button cancelButton = new Button("Cancel");
-		cancelButton.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent arg0) {
-				dialog.hideModalDialog();
-				dialog.destroy();
-			}
-		});
-		dialog.addNodeToFooter(cancelButton);
-		
-		Button connectButton = new Button("Connect");
-		connectButton.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent arg0) {
-				try {
-					MongoUtil.setHost(hostField.getText());
-					MongoUtil.setPort(Integer.valueOf(portField.getText()));
-					MongoUtil.initConnection();
-					logger.info("Successfully connectted to " + MongoUtil.getHost() + ".");
-					refreshDatabaseTreeView();
-				}
-				catch (Exception e) {
-					logger.error(e.getMessage(),e);
-				}
-				finally {
-					dialog.hideModalDialog();
-					dialog.destroy();
-				}
-			}
-		});
-		dialog.addNodeToFooter(connectButton);
+		final ConnectionDialog dialog = new ConnectionDialog(this);
 		dialog.showModalDialog();
 	}
 	
