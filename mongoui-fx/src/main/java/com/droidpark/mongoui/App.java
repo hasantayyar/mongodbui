@@ -1,7 +1,6 @@
 package com.droidpark.mongoui;
 
 import org.apache.log4j.Logger;
-
 import com.droidpark.mongoui.form.MainForm;
 import com.droidpark.mongoui.util.Language;
 
@@ -18,9 +17,13 @@ public class App {
 	private static Logger logger = Logger.getLogger(App.class);
 	
     public static void main( String[] args ) {
-    	logger.info("MongoUI initializing...");
+    	logger.info("########### MongoUI initializing...");
     	Language.init();
-    	logger.info("MongoUI initilazed.");
-    	Application.launch(MainForm.class, args);
+    	logger.info("########### MongoUI initilazed.");
+        try { 
+            javafx.application.Application.launch(MainForm.class, args);
+        }catch(Exception e){
+            logger.info("########### "+e.getMessage());
+        }
     }
 }
